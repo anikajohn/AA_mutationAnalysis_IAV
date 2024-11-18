@@ -85,10 +85,29 @@ MutAA <- var_list %>%
 dt <- MutAA[new_AA != org_AA]
 
 dt[, mut_lable := paste0(org_AA,gene_codonIDX,new_AA)]
+dt[, mut_lable_nuc := paste0(REF,POS,ALT)]
 
 dt = merge(dt,location_translation,
            by.x=c('location_code'),
            by.y=c('code'))
+
+
+#formatting for Dashboard to jason format
+dt_dash_aa = dt[,c("sample_name","date","location","mut_lable","AF")]
+dt_dash_aa[, segment := segment]
+dt_dash_aa[, mutations := sapply(1:.N, function(i) setNames(list(AF[i]), mut_lable[i]))]
+dt_dash_aa = dt_dash_aa[, .(mutations = paste0("{", paste(sprintf('"%s": %.6f', mut_lable, AF), 
+                                                          collapse = ", "), "}")),
+                        by = .(sample_name, date, location,segment)]
+
+dt_dash_nuc = dt[,c("sample_name","date","location","mut_lable_nuc","AF")]
+dt_dash_nuc[, segment := segment]
+dt_dash_nuc[, mutations := sapply(1:.N, function(i) setNames(list(AF[i]), mut_lable_nuc[i]))]
+dt_dash_nuc = dt_dash_nuc[, .(mutations = paste0("{", paste(sprintf('"%s": %.6f', mut_lable_nuc, AF), 
+                                                            collapse = ", "), "}")),
+                          by = .(sample_name, date, location,segment)]
+
+
 
 ###Outputting###
 
@@ -100,5 +119,9 @@ if (!dir.exists(dir_out)){
 }
 
 fwrite(dt,paste0(dir_out,"AA_mutations.tsv"))
+fwrite(dt_dash_aa,paste0(dir_out,"AA_mutations_Dashboard.tsv"),
+       sep = "\t", quote = FALSE)
+fwrite(dt_dash_nuc,paste0(dir_out,"Nuc_mutations_Dashboard.tsv"),
+       sep = "\t", quote = FALSE)
 
 
