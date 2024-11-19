@@ -93,21 +93,48 @@ dt = merge(dt,location_translation,
 
 
 #formatting for Dashboard to jason format
-dt_dash_aa = dt[,c("sample_name","date","location","mut_lable","AF")]
-dt_dash_aa[, segment := segment]
-dt_dash_aa[, mutations := sapply(1:.N, function(i) setNames(list(AF[i]), mut_lable[i]))]
-dt_dash_aa = dt_dash_aa[, .(mutations = paste0("{", paste(sprintf('"%s": %.6f', mut_lable, AF), 
-                                                          collapse = ", "), "}")),
-                        by = .(sample_name, date, location,segment)]
+#coverage below 100 reads is not trustworthy
+dt[DP >= 100, AF := AF]
+dt[DP < 100, AF := NA_real_]
+colnames(dt)[colnames(dt) == "sample_name"] <- "submissionId"
 
-dt_dash_nuc = dt[,c("sample_name","date","location","mut_lable_nuc","AF")]
-dt_dash_nuc[, segment := segment]
-dt_dash_nuc[, mutations := sapply(1:.N, function(i) setNames(list(AF[i]), mut_lable_nuc[i]))]
-dt_dash_nuc = dt_dash_nuc[, .(mutations = paste0("{", paste(sprintf('"%s": %.6f', mut_lable_nuc, AF), 
-                                                            collapse = ", "), "}")),
-                          by = .(sample_name, date, location,segment)]
+#placeholder lineage information
+dt[, lineage_name := "something"]
+dt[, lineage_abundance := NA_real_]
+
+#formatting for Dashboard to jason format
+dt_dash_aa = dt[,c("submissionId","date","location","mut_lable","AF","lineage_name","lineage_abundance")]
+dt_dash_aa[, aminoAcidMutationFrequencies := sapply(1:.N, function(i) setNames(list(AF[i]), mut_lable[i]))]
+dt_dash_aa[, lineageFrequencyEstimates := sapply(1:.N, function(i) setNames(list(lineage_abundance[i]), lineage_name[i]))]
+
+dt_dash_aa = dt_dash_aa[, .(aminoAcidMutationFrequencies = paste0("{", paste(sprintf('"%s": %.6f', mut_lable, AF), 
+                                                                             collapse = ", "), "}"),
+                            lineageFrequencyEstimates = paste0("{", paste(sprintf('"%s": %.6f',lineage_name,lineage_abundance), 
+                                                                          collapse = ", "), "}")),
+                        by = .(submissionId, date, location)]
 
 
+dt_dash_nuc = dt[,c("submissionId","date","location","mut_lable_nuc","AF","lineage_name","lineage_abundance")]
+dt_dash_nuc[, nucleotideMutationFrequencies := sapply(1:.N, function(i) setNames(list(AF[i]), mut_lable_nuc[i]))]
+dt_dash_nuc[, lineageFrequencyEstimates := sapply(1:.N, function(i) setNames(list(lineage_abundance[i]), lineage_name[i]))]
+
+dt_dash_nuc = dt_dash_nuc[, .(nucleotideMutationFrequencies = paste0("{", paste(sprintf('"%s": %.6f', mut_lable_nuc, AF), 
+                                                                                collapse = ", "), "}"),
+                              lineageFrequencyEstimates = paste0("{", paste(sprintf('"%s": %.6f', lineage_name,lineage_abundance), 
+                                                                            collapse = ", "), "}")),
+                          by = .(submissionId, date, location)]
+
+
+dt_out = merge(dt_dash_aa,dt_dash_nuc) 
+dt_out[, reference := segment]
+dt_out[, primerProtocol := "EAWAG_11_24"]
+
+#need to do it manually here, because before nummeric value is expected
+dt_out[, `:=`(
+  lineageFrequencyEstimates = str_replace_all(lineageFrequencyEstimates, "NA","null"),
+  aminoAcidMutationFrequencies = str_replace_all(aminoAcidMutationFrequencies, "NA", "null"),
+  nucleotideMutationFrequencies = str_replace_all(nucleotideMutationFrequencies, "NA", "null")
+)]
 
 ###Outputting###
 
@@ -118,10 +145,7 @@ if (!dir.exists(dir_out)){
   dir.create(dir_out)
 }
 
-fwrite(dt,paste0(dir_out,"AA_mutations.tsv"))
-fwrite(dt_dash_aa,paste0(dir_out,"AA_mutations_Dashboard.tsv"),
-       sep = "\t", quote = FALSE)
-fwrite(dt_dash_nuc,paste0(dir_out,"Nuc_mutations_Dashboard.tsv"),
-       sep = "\t", quote = FALSE)
-
+fwrite(dt,paste0(dir_out,"Mutations.tsv"))
+fwrite(dt_out,paste0(dir_out,"Mutations_Dashboard.tsv"),
+       sep = "\t", quote = FALSE, na = "null")
 
