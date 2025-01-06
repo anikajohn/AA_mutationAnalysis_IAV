@@ -43,6 +43,8 @@ segment <- gsub(".fasta","",file.name(fasta_file))
 
 samples <- read.table(sample_file)
 
+latest_batch <- samples[order(samples[, 2], decreasing = TRUE), ][1,2]
+
 samples_dir <- paste(samples$V1,samples$V2,sep = "/")
 
 var_files <- paste(results,samples_dir,"variants/SNVs/snvs.vcf",sep = "/")
@@ -151,7 +153,7 @@ if (!dir.exists(dir_out)){
   dir.create(dir_out)
 }
 
-fwrite(dt,paste0(dir_out,"Mutations.tsv"))
-fwrite(dt_out,paste0(dir_out,"Mutations_Dashboard.tsv"),
+#fwrite(dt,paste0(dir_out,"Mutations.tsv"))
+fwrite(dt_out,paste0(dir_out,latest_batch,"_Mutations_Dashboard.tsv"),
        sep = "\t", quote = FALSE, na = "null")
 
