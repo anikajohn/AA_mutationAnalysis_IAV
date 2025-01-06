@@ -4,6 +4,8 @@ suppressPackageStartupMessages(require(optparse))
 suppressPackageStartupMessages(require(data.table))
 suppressPackageStartupMessages(require(rconfig))
 suppressPackageStartupMessages(require(do))
+suppressPackageStartupMessages(require(yaml))
+
 
 #functions to translate nucleotide muations to AA
 suppressPackageStartupMessages(source("mutationTranslation.R"))
@@ -25,7 +27,11 @@ location_translation <- fread(opt$locationFile)
 dir_euler <- opt$vpipe_dir
 
 
-configs <- read_ini(paste0(dir_euler,'vpipe.config'))
+#configs <- read_ini(paste0(dir_euler,'vpipe.config'))
+
+# Read the YAML file
+configs <- yaml::read_yaml("vpipe_influenza_aviti.yaml")
+
 fasta_file <- paste0(dir_euler,configs$input$reference)
 sample_file <- paste0(dir_euler,configs$input$samples_file)
 results <-  paste0(dir_euler,configs$output$datadir) #output dir of v-pipe run
