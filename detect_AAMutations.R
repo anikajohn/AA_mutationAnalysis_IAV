@@ -26,7 +26,6 @@ opt = parse_args(OptionParser(option_list=option_list))
 location_translation <- fread(opt$locationFile)
 dir_euler <- opt$vpipe_dir
 
-
 #configs <- read_ini(paste0(dir_euler,'vpipe.config'))
 
 # Read the YAML file
@@ -154,6 +153,6 @@ if (!dir.exists(dir_out)){
 }
 
 #fwrite(dt,paste0(dir_out,"Mutations.tsv"))
-fwrite(dt_out,paste0(dir_out,latest_batch,"_Mutations_Dashboard.tsv"),
+fwrite(dt_out,paste0(dir_out,latest_batch,"_",segment,"_Mutations_Dashboard.tsv"),
        sep = "\t", quote = FALSE, na = "null")
 
