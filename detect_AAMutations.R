@@ -16,6 +16,8 @@ suppressPackageStartupMessages(source("readingFunctions.R"))
 option_list = list(
   make_option(c("-d", "--vpipe_dir"), action="store", default=NA, type='character',
               help="Path to v-pipe working directory"),
+  make_option(c("-d", "--vpipe_config"), action="store", default=NA, type='character',
+              help="Path to v-pipe config file"),
   make_option(c("-l", "--locationFile"), action="store", default=NA, type='character',
               help="Path to location translation file")
 )
@@ -26,34 +28,54 @@ opt = parse_args(OptionParser(option_list=option_list))
 location_translation <- fread(opt$locationFile)
 dir_euler <- opt$vpipe_dir
 
-#configs <- read_ini(paste0(dir_euler,'vpipe.config'))
-
 # Read the YAML file
-configs <- yaml::read_yaml("vpipe_influenza_aviti.yaml")
+#configs <- yaml::read_yaml(paste0(dir_euler,"/vpipe_influenza_aviti.yaml"))
+configs <- yaml::read_yaml(opt$vpipe_config)
 
-fasta_file <- paste0(dir_euler,configs$input$reference)
-sample_file <- paste0(dir_euler,configs$input$samples_file)
-results <-  paste0(dir_euler,configs$output$datadir) #output dir of v-pipe run
-
-
+fasta_file <- configs$input$reference
 segment <- gsub(".fasta","",file.name(fasta_file))
 
 ##### 1. Reading of vcf files #####
 
-samples <- read.table(sample_file)
+samples <- read.table(configs$input$samples_file)
+
 
 latest_batch <- samples[order(samples[, 2], decreasing = TRUE), ][1,2]
-
+results <- configs$output$datadir
 samples_dir <- paste(samples$V1,samples$V2,sep = "/")
 
 var_files <- paste(results,samples_dir,"variants/SNVs/snvs.vcf",sep = "/")
 
+
+# Check which files exist
+existing_files <- var_files[file.exists(var_files)]
+
+# Filter out non-existing files
+non_existing_files <- var_files[!file.exists(var_files)]
+
+# Print the non-existing files
+if (length(non_existing_files) > 0) {
+  cat(sprintf("The following files do not exist, but samples are in sample.tsv file (%d out of %d total):\n", 
+              length(non_existing_files), length(var_files)))
+  print(non_existing_files)
+} else {
+  cat("All files exist.\n")
+}
+
+var_files <- existing_files
+
+#var_list <- var_files %>%
+#  map(function(x) {
+#    print(x)  # Print the value of x
+#    read_and_mark_vcf(x)
+#  })
+
+print("Only non-empty files are processed")
 var_list <- var_files %>% 
   map(function(x) read_and_mark_vcf(x))
 
 #Usually not all samples will have muation calls aka vcf files 
 var_list <- var_list[!sapply(var_list, is.null)]
-
 
 ###### 2. Translating Nucleotide mutations to AA mutations ####
 
@@ -146,13 +168,13 @@ dt_out[, `:=`(
 ###Outputting###
 
 
-dir_out <-  paste0(dir_euler,"MutationFrequencies/")
+dir_out <-  paste0(dir_euler,"/MutationFrequencies/")
 
 if (!dir.exists(dir_out)){
   dir.create(dir_out)
 }
 
-#fwrite(dt,paste0(dir_out,"Mutations.tsv"))
+fwrite(dt,paste0(dir_out,segment,"Mutations.tsv"))
 fwrite(dt_out,paste0(dir_out,latest_batch,"_",segment,"_Mutations_Dashboard.tsv"),
        sep = "\t", quote = FALSE, na = "null")
 
