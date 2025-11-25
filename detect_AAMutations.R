@@ -168,13 +168,13 @@ dt_out[, `:=`(
 ###Outputting###
 
 
-dir_out <-  paste0(dir_euler,"/MutationFrequencies/")
+dir_out <-  paste0(dir_euler,"/mutation_frequencies/")
 
 if (!dir.exists(dir_out)){
   dir.create(dir_out)
 }
 
-fwrite(dt,paste0(dir_out,segment,"Mutations.tsv"))
+fwrite(dt,paste0(dir_out,"/0_table_for_plotting/",segment,"_Mutations.tsv"))
 fwrite(dt_out,paste0(dir_out,latest_batch,"_",segment,"_Mutations_Dashboard.tsv"),
        sep = "\t", quote = FALSE, na = "null")
 
