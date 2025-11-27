@@ -3,7 +3,7 @@
 suppressPackageStartupMessages(require(optparse))
 suppressPackageStartupMessages(require(data.table))
 suppressPackageStartupMessages(require(rconfig))
-suppressPackageStartupMessages(require(do))
+#suppressPackageStartupMessages(require(do)) #does not exist?
 suppressPackageStartupMessages(require(yaml))
 
 
@@ -16,7 +16,7 @@ suppressPackageStartupMessages(source("readingFunctions.R"))
 option_list = list(
   make_option(c("-d", "--vpipe_dir"), action="store", default=NA, type='character',
               help="Path to v-pipe working directory"),
-  make_option(c("-d", "--vpipe_config"), action="store", default=NA, type='character',
+  make_option(c("-c", "--vpipe_config"), action="store", default=NA, type='character',
               help="Path to v-pipe config file"),
   make_option(c("-l", "--locationFile"), action="store", default=NA, type='character',
               help="Path to location translation file")
@@ -33,7 +33,7 @@ dir_euler <- opt$vpipe_dir
 configs <- yaml::read_yaml(opt$vpipe_config)
 
 fasta_file <- configs$input$reference
-segment <- gsub(".fasta","",file.name(fasta_file))
+segment <- gsub(".fasta","",basename(fasta_file))
 
 ##### 1. Reading of vcf files #####
 
