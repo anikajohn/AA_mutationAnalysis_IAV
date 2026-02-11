@@ -71,8 +71,13 @@ var_files <- existing_files
 #  })
 
 print("Only non-empty files are processed")
-var_list <- var_files %>% 
-  map(function(x) read_and_mark_vcf(x))
+#var_list <- var_files %>% 
+#  map(function(x) read_and_mark_vcf(x))
+var_list <- purrr::imap(var_files, function(x, i) {
+  message("Processing index ", i, ": ", x)
+  read_and_mark_vcf(x)
+})
+
 
 #Usually not all samples will have muation calls aka vcf files 
 var_list <- var_list[!sapply(var_list, is.null)]

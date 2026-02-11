@@ -149,6 +149,9 @@ read_and_mark_vcf <- function(file_path, regex_sample = "\\d{2}_\\d{4}_\\d{2}_\\
     #only care about point mutations
     print(paste("processing file:",file_path))
     dt = dt[nchar(REF) == 1 & nchar(ALT) == 1]
+    #if the sample only had Indels this would leave an empty dt with will fail downstream, thus add that it should skip the sample if filtering leavels an empty dt:
+    if (nrow(dt) == 0) return(NULL)
+
     dt[, c('location_code', 'year','month','day') := tstrsplit(sample_name, "_", fixed=TRUE)]
     dt[, c('date') := paste(year,month,day,sep = "-")] 
     dt[, c('year','month','day') := NULL]
